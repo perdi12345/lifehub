@@ -7,6 +7,7 @@ import {
   buildLoginRedirectPath,
   getPostAuthRedirectPath,
   isPublicAuthPath,
+  isPublicRoute,
 } from "@/lib/auth";
 import { useAuthStore } from "@/stores/authStore";
 import type { User } from "@/types";
@@ -17,7 +18,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const nextPath = searchParams.get("next");
-  const isPublicPath = isPublicAuthPath(pathname);
+  const isPublicAuthPage = isPublicAuthPath(pathname);
+  const isPublicPath = isPublicRoute(pathname);
 
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const status = useAuthStore((state) => state.status);
@@ -40,7 +42,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
 
     if (status === "authenticated") {
-      if (isPublicPath) {
+      if (isPublicAuthPage) {
         router.replace(getPostAuthRedirectPath(nextPath));
       }
 
@@ -63,7 +65,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
         setCurrentUser(response.data);
 
-        if (isPublicPath) {
+        if (isPublicAuthPage) {
           router.replace(getPostAuthRedirectPath(nextPath));
         }
       } catch {
@@ -87,6 +89,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [
     clearSession,
     hasHydrated,
+    isPublicAuthPage,
     isPublicPath,
     nextPath,
     pathname,

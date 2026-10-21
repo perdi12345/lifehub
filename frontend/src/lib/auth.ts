@@ -2,8 +2,16 @@ export const AUTH_SESSION_COOKIE_NAME = "lifehub_auth";
 export const DEFAULT_AUTHENTICATED_PATH = "/dashboard";
 export const PUBLIC_AUTH_PATHS = ["/auth/login", "/auth/register"] as const;
 
+export function isPublicPagePath(pathname: string) {
+  return pathname === "/" || pathname === "/tutorial" || pathname.startsWith("/tutorial/");
+}
+
 export function isPublicAuthPath(pathname: string) {
   return PUBLIC_AUTH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+export function isPublicRoute(pathname: string) {
+  return isPublicPagePath(pathname) || isPublicAuthPath(pathname);
 }
 
 export function sanitizeRedirectPath(pathname: string | null | undefined) {
