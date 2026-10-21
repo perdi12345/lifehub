@@ -180,7 +180,7 @@ function ScreenCarousel() {
 
   return (
     <div
-      className="relative"
+      className="relative min-w-0"
       role="region"
       aria-roledescription="carousel"
       aria-label="LifeHubの画面紹介"
@@ -220,7 +220,7 @@ function ScreenCarousel() {
           <div className="overflow-hidden rounded-lg bg-slate-100 sm:rounded-xl">
             <div className="flex transition-transform duration-700 ease-out motion-reduce:transition-none" style={{ transform: `translateX(-${activeIndex * 100}%)` }}>
               {slides.map((slide) => (
-                <div key={slide.screen} className="w-full shrink-0 p-2.5 sm:p-4" aria-hidden={slide.screen !== activeSlide.screen}>
+                <div key={slide.screen} className="w-full min-w-0 shrink-0 p-2.5 sm:p-4" aria-hidden={slide.screen !== activeSlide.screen}>
                   <TutorialScreenPreview screen={slide.screen} />
                 </div>
               ))}
@@ -276,15 +276,16 @@ export default function TutorialLanding() {
         </nav>
       </header>
 
-      <section className="relative z-10 mx-auto grid max-w-7xl items-center gap-5 px-5 pb-8 pt-4 sm:gap-8 sm:px-8 sm:pb-20 sm:pt-12 lg:min-h-[calc(100svh-68px)] lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-12 lg:py-12">
-        <div className="max-w-xl lg:pb-8">
+      <section className="relative z-10 mx-auto grid max-w-7xl items-center gap-5 px-5 pb-8 pt-4 sm:gap-8 sm:px-8 sm:pb-20 sm:pt-12 lg:min-h-[calc(100svh-68px)] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-8 lg:px-12 lg:py-12 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-12">
+        <div className="min-w-0 max-w-xl lg:pb-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1.5 text-[10px] font-semibold text-emerald-800 shadow-sm sm:text-xs">
             <span className="size-1.5 rounded-full bg-emerald-500" />
             あなたの暮らしを整える、ひとつの場所
           </div>
-          <h1 className="mt-3 text-[1.875rem] font-semibold leading-[1.12] text-slate-950 sm:mt-6 sm:text-5xl sm:leading-[1.16] lg:text-[3.5rem]">
-            お金も、メモも、ファイルも。<br className="hidden sm:block" />
-            <span className="text-brand-700">暮らしの記録を、ひとつに。</span>
+          <h1 className="mt-3 text-[1.75rem] font-semibold leading-[1.12] text-slate-950 sm:mt-6 sm:text-5xl sm:leading-[1.16] lg:text-[2.75rem] xl:text-[3.25rem]">
+            お金も、メモも、<br />
+            ファイルも。
+            <span className="block text-brand-700">暮らしの記録を、<br />ひとつに。</span>
           </h1>
           <p className="mt-3 max-w-md text-[13px] leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-8">
             LifeHubは、資産・メモ・ファイルをまとめて管理できる生活ダッシュボード。散らばる記録をひとつに集めて、毎日をすっきり整えます。
