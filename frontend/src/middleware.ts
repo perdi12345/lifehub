@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_SESSION_COOKIE_NAME, buildLoginRedirectPath, isPublicAuthPath } from "@/lib/auth";
+import { AUTH_SESSION_COOKIE_NAME, buildLoginRedirectPath, isPublicRoute } from "@/lib/auth";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // パブリックパスはそのまま通す
-  if (isPublicAuthPath(pathname)) {
+  if (isPublicRoute(pathname)) {
     return NextResponse.next();
   }
 

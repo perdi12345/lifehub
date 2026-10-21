@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
-import { buildLoginRedirectPath, isPublicAuthPath } from "@/lib/auth";
+import { buildLoginRedirectPath, isPublicRoute } from "@/lib/auth";
 import { useAuthStore } from "@/stores/authStore";
 
 declare module "axios" {
@@ -57,7 +57,7 @@ api.interceptors.response.use(
     ) {
       useAuthStore.getState().clearSession();
 
-      if (!isPublicAuthPath(window.location.pathname) && !isRedirectingForUnauthorized) {
+      if (!isPublicRoute(window.location.pathname) && !isRedirectingForUnauthorized) {
         isRedirectingForUnauthorized = true;
         window.location.assign(
           buildLoginRedirectPath(window.location.pathname, window.location.search)
