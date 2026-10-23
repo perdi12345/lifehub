@@ -1,176 +1,165 @@
-# Auction Platform
+# LifeHub
 
-Rails API、Next.js、Nuxt を組み合わせた、C2C オークション型マーケットプレイスです。ユーザー向けサイトと管理画面を別アプリケーションとして構成し、API、ローカル開発環境、本番デプロイ設定を同一リポジトリで管理しています。
+資産の記録、メモ、ファイルの保存を一か所で扱う個人向け Web アプリケーションです。Next.js のフロントエンドと Rails API を分離し、Docker Compose でローカル環境を起動できます。
 
 ## 主な機能
 
-### ユーザー向けサイト
+- **資産管理** — 資産項目の登録・編集・削除、日付ごとの残高記録、複数項目の一括記録
+- **メモ** — 作成・編集・削除・検索、通常メモと締切付きメモの管理
+- **ファイル管理** — ファイルのアップロード、一覧表示、削除
+- **アカウント** — ユーザー登録、ログイン・ログアウト、プロフィールとパスワードの変更
+- **データ管理** — 資産・メモ・ファイルの種別ごとの記録初期化
 
-- 商品一覧・詳細、検索、終了間近の商品、1円スタートの商品、最近の落札商品の表示
-- 商品の出品と画像アップロード
-- オークションへの入札、即決購入、価格交渉
-- お気に入り登録
-- 取引メッセージ
-- プロフィール、住所、ウォレットの管理
-
-### 管理画面
-
-- 管理者ログイン
-- ダッシュボード
-- ユーザー・商品・カテゴリの管理
-- 管理者権限の管理
-
-## 技術構成
+## 技術スタック
 
 | 領域 | 技術 |
 | --- | --- |
-| API | Ruby 3.2.4、Rails 7.1、PostgreSQL |
-| 認証・ファイル管理 | devise_token_auth、Active Storage、HttpOnly Cookie |
-| ユーザー向け Web | Next.js 15、React 19、TypeScript、Tailwind CSS、Zustand |
-| 管理画面 | Nuxt 4、Vue 3、Pinia、Vuetify |
-| 開発・デプロイ | Docker、Docker Compose、Caddy、AWS EC2 |
-| オブジェクトストレージ | S3（必要に応じて利用） |
+| Frontend | Next.js 15, TypeScript, Tailwind CSS |
+| Client state / Data fetching | Zustand, TanStack Query |
+| Backend | Ruby on Rails 7.2 (API mode) |
+| Authentication | Devise, devise-jwt |
+| Database | PostgreSQL 16 |
+| File storage | Active Storage (local / S3) |
+| Development environment | Docker, Docker Compose |
 
-## リポジトリ構成
+## セットアップ
+
+### Docker Compose
+
+**必要なもの:** Docker Desktop または Docker Engine と Docker Compose
+
+```bash
+# リポジトリのルートで実行
+docker compose up --build
+```
+
+起動後、[http://localhost:3000](http://localhost:3000) にアクセスしてください。
+
+現在の起動構成では、初回セットアップ時に DB の作成・マイグレーション・シード投入を実行します。
+
+開発用アカウント（シードデータ）:
+
+```text
+Email:    test@example.com
+Password: password
+```
+
+> このアカウント情報はローカル開発用です。公開環境では使用しないでください。
+
+停止する場合:
+
+```bash
+docker compose down
+```
+
+### Docker を使わずに起動する場合
+
+必要なバージョン: Ruby 3.3.0、Node.js 20 以降、PostgreSQL 16。
+
+バックエンド:
+
+```bash
+cd backend
+bundle install
+# 環境変数はローカル環境に合わせて設定してください
+rails db:create db:migrate db:seed
+rails server -p 3001
+```
+
+フロントエンド（別ターミナル）:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+フロントエンドは http://localhost:3000、API は http://localhost:3001 で起動します。DB 接続や API 接続先などの環境変数は、それぞれのローカル環境に合わせて設定してください。
+
+## 構成
 
 ```text
 .
-├── backend/                  # Rails API
-├── frontend/                 # ユーザー向け Next.js アプリ
-├── admin/                    # Nuxt 管理画面
-├── deploy/Caddyfile          # 本番用 reverse proxy 設定
-├── docker-compose.local.yml  # ローカル開発環境
-├── docker-compose.yml        # EC2 本番環境
-├── scripts/                  # 起動・停止・デプロイスクリプト
-└── .md/                      # 環境構築・デプロイ・構成分析の資料
+├── docker-compose.yml
+├── frontend/
+│   ├── src/
+│   │   ├── app/                 # auth, dashboard, money, memos, files
+│   │   ├── components/          # layout, money, memos, files
+│   │   ├── lib/api.ts           # API クライアント
+│   │   ├── stores/              # Zustand ストア
+│   │   └── types/               # TypeScript 型定義
+│   └── package.json
+└── backend/
+    ├── app/
+    │   ├── controllers/api/v1/  # 認証・資産・メモ・ファイル API
+    │   └── models/              # User, AssetItem, AssetSnapshot, Memo, UserFile
+    ├── config/
+    │   ├── routes.rb
+    │   └── initializers/        # Devise, CORS など
+    └── db/migrate/
 ```
 
-## 起動方法（ローカル）
+フロントエンドは表示と操作を担当し、Rails API がデータ操作と認証を受け持ちます。資産の時系列記録には `AssetSnapshot`、アップロードファイルの管理には Active Storage を使用します。
 
-Docker がインストールされている環境で、リポジトリのルートから実行します。
+## API
 
-```bash
-./scripts/local-up.sh
-```
+API のベースパスは `/api/v1` です。
 
-起動後の URL：
+### 認証・ユーザー
 
-| サービス | URL |
-| --- | --- |
-| ユーザー向けサイト | http://localhost:3001 |
-| 管理画面 | http://localhost:3003 |
-| API ヘルスチェック | http://localhost:3000/health |
+| Method | Path | 内容 |
+| --- | --- | --- |
+| POST | `/auth` | ユーザー登録 |
+| POST | `/auth/sign_in` | ログイン |
+| DELETE | `/auth/sign_out` | ログアウト |
+| GET | `/me` | ログインユーザー取得 |
+| PATCH | `/me` | 表示名変更 |
+| PATCH | `/me/password` | パスワード変更 |
 
-停止する場合：
+ログイン時の JWT は `Authorization: Bearer <token>` 形式で扱います。トークンの保持期間や保存方法は認証設定・クライアント実装に依存します。
 
-```bash
-./scripts/local-down.sh
-```
+### 資産管理
 
-環境変数やローカル構成の詳細は [`.md/ENVIRONMENT_GUIDE.md`](.md/ENVIRONMENT_GUIDE.md) を参照してください。環境によって追加の設定が必要な場合は、同ファイルと `.env.local.example` を確認してください。
+| Method | Path | 内容 |
+| --- | --- | --- |
+| GET / POST | `/assets` | 資産項目の一覧・作成 |
+| PUT / DELETE | `/assets/:id` | 資産項目の更新・削除 |
+| GET | `/asset_snapshots` | 資産記録の一覧 |
+| POST | `/asset_snapshots` | 資産記録の作成（同日分は上書き） |
+| PUT / DELETE | `/asset_snapshots/:id` | 資産記録の更新・削除 |
+| POST | `/asset_snapshots/bulk_create` | 複数資産の同日一括記録 |
 
-## API の名前空間
+### メモ
 
-| パス | 用途 |
-| --- | --- |
-| `/auth` | 共通認証 |
-| `/auction/v1` | ユーザー向け API |
-| `/admin/v1` | 管理画面向け API |
-| `/web/v1` | 将来のメインサイト向け API |
-| `/health` | ヘルスチェック |
+| Method | Path | 内容 |
+| --- | --- | --- |
+| GET / POST | `/memos` | 一覧・作成（`GET` は `?q=` で検索可能） |
+| GET | `/memos/:id` | 詳細 |
+| PUT / DELETE | `/memos/:id` | 更新・削除 |
 
-ユーザー向け機能と管理機能を同じ Rails アプリケーションで提供しつつ、API の名前空間を分けて責務を整理しています。
+`memo_type` は `normal`（通常）または `deadline`（締切付き）です。`deadline` の場合は `deadline_at` が必須です。既存の通常メモは `memo_type=normal`、`deadline_at=null` として扱います。
 
-## 設計上のポイント
+### ファイル・データ初期化
 
-### 認証と認可
+| Method | Path | 内容 |
+| --- | --- | --- |
+| GET / POST | `/files` | ファイル一覧・アップロード（`multipart/form-data`） |
+| DELETE | `/files/:id` | ファイル削除 |
+| DELETE | `/records/assets` | 資産項目・記録の初期化 |
+| DELETE | `/records/memos` | メモの初期化 |
+| DELETE | `/records/files` | ファイルの初期化 |
 
-- ユーザー向けサイトでは Next.js の API Routes を Rails API への proxy として使用し、認証 token を HttpOnly Cookie で扱います。
-- 管理画面向け API は `Admin::V1::BaseController` を経由し、管理者のロール（`admin` / `super_admin`）やリソース単位の権限を確認します。
-- 商品の更新・削除では、リクエストしたユーザーが出品者本人であることを確認します。
+> 表中の各パスには `/api/v1` を付けてアクセスしてください。初期化 API はデータを削除するため、実行時には注意してください。
 
-### データ整合性と API の制約
+## 今後の改善候補
 
-- お気に入りの重複登録は、アプリケーション側の制御に加えて DB の unique index でも防止します。
-- wallet API は、任意の金額を直接加算できないようにし、売上をポイントへ反映する用途に制限しています。
-- Rails コンテナ起動時の自動 migration は行わず、デプロイ時に明示的に実行する構成です。
+- カレンダー形式のスケジュール管理
+- 予算設定とアラート
+- メモの Markdown プレビュー
+- ファイルのフォルダ管理
+- PWA 対応
+- CSV / PDF エクスポート
 
-### ローカル環境と本番環境
+## 補足
 
-- ローカルでは hot reload を利用し、開発用 Compose から各サービスへアクセスできるようにしています。
-- 本番では build 済み image を利用し、Caddy で HTTPS 終端と各アプリケーションへの reverse proxy を行います。
-- DB migration をアプリケーション起動処理から分離し、デプロイ手順の中で実行します。
-
-## EC2 へのデプロイ
-
-本番環境では、Caddy がドメインごとにフロントエンド、管理画面、API へリクエストを振り分けます。
-
-| ドメイン例 | 転送先 |
-| --- | --- |
-| `auction.example.com` | frontend |
-| `admin.example.com` | admin |
-| `api.example.com` | backend |
-
-### 1. 環境変数の設定
-
-```bash
-cp .env.example .env
-```
-
-`.env` の値をデプロイ環境に合わせて設定します。少なくとも以下の項目を確認してください。
-
-```dotenv
-FRONTEND_DOMAIN=auction.example.com
-ADMIN_DOMAIN=admin.example.com
-API_DOMAIN=api.example.com
-CADDY_EMAIL=your-email@example.com
-
-RAILS_MASTER_KEY=your-rails-master-key
-SECRET_KEY_BASE=your-secret-key-base
-DATABASE_PASSWORD=your-strong-database-password
-
-APP_HOST=api.example.com
-RAILS_HOSTS=api.example.com
-RAILS_INTERNAL_HOSTS=backend
-FRONTEND_ORIGINS=https://auction.example.com,https://admin.example.com
-
-NEXT_PUBLIC_API_BASE_URL=https://api.example.com
-NEXT_PUBLIC_API_HOST=api.example.com
-NUXT_PUBLIC_API_BASE=https://api.example.com
-```
-
-上記ドメインは設定例です。実際のドメイン、シークレット、環境変数の書式は `.env.example` とデプロイ資料に合わせてください。`.env` などの秘密情報を含むファイルはリポジトリへコミットしないでください。
-
-### 2. デプロイ
-
-```bash
-./scripts/deploy-ec2.sh
-```
-
-詳しい手順や前提条件は [`.md/DEPLOYMENT.md`](.md/DEPLOYMENT.md) を参照してください。
-
-本番ログの確認例：
-
-```bash
-docker compose --env-file .env -f docker-compose.yml logs -f backend
-```
-
-Rails console の起動例：
-
-```bash
-docker compose --env-file .env -f docker-compose.yml exec backend bundle exec rails console
-```
-
-## 関連ドキュメント
-
-- [環境構築ガイド](.md/ENVIRONMENT_GUIDE.md)
-- [デプロイ手順](.md/DEPLOYMENT.md)
-- [構成分析・改善方針](.md/PROJECT_ANALYSIS.md)
-
-## 今後の改善項目
-現時点で対応を進めたい項目
-- 管理画面も server route 経由の BFF 構成に整理する
-- OpenAPI schema から frontend / admin の TypeScript 型を生成する
-- 購入、入札、オファー承認時の競合制御を強化する
-- Rails request spec と frontend / admin の E2E テストを追加する
-- EC2 単体構成から ECS、RDS、S3、CloudFront を組み合わせた構成を検討する
+この README はアプリケーションの概要とローカルでの起動方法をまとめたものです。実際の API 仕様や環境変数の詳細は `backend/config/routes.rb`、認証設定、各サービスの設定ファイルを参照してください。
